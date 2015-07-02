@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+    canvas { background: blue; }
+</style>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+  attribute  vec4 vPosition;
+  attribute  vec2 vTexCoord;
+  attribute  vec3 vNormal;
+  varying vec2 fTexCoord;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+
+  varying vec4 fColor;
+  uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+  uniform vec4 lightPosition;
+  uniform float shininess;
+  uniform mat3 normalMatrix;
+
+  void main()
+  {
+  // pos is vertex position in eye coordinates
+
+  vec3 pos = (modelViewMatrix * vPosition).xyz;
+
+  // vector from vertex position to light source
+
+  vec3 L;
+
+  // check for directional light
+
+  if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
+  else L = normalize( lightPosition.xyz - pos );
+
+  // Because the eye point the is at the orgin
+  // the vector from the vertex position to the eye is
+
+  vec3 E = -normalize( pos );
+
+  // halfway vector
+
+  vec3 H = normalize( L + E );
+
+  // Transform vertex normal into eye coordinates
+
+  vec3 N = normalize( modelViewMatrix*vec4(vNormal,0) ).xyz;
+
+
+  // Compute terms in the illumination equation
+  vec4 ambient = ambientProduct;
+
+  float Kd = max( dot(L, N), 0.0 );
+  vec4  diffuse = Kd*diffuseProduct;
+
+  float Ks = pow( max(dot(N, H), 0.0), shininess );
+  vec4  specular = Ks * specularProduct;
+
+  if( dot(L, N) < 0.0 ) {
+	specular = vec4(0.0, 0.0, 0.0, 1.0);
+    } 
+   
+  fColor = ambient + diffuse +specular;
+
+  fColor.a = 1.0;
+  
+  fTexCoord = vTexCoord;
+  gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+  }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+  precision mediump float;
+  varying  vec2 fTexCoord;
+  uniform sampler2D texture;
+
+  uniform float scrollTex;
+  uniform float time;
+  uniform float starttime;
+  uniform float isSky;
+  uniform float isGoScene;
+  uniform float isObject;
+
+  varying vec4 fColor;
+  
+  void
+  main()
+  {
+    if(isObject < 0.5){
+	  	vec2 v = vec2(0.0, 0.0);
+		  if (scrollTex > 0.5) {
+	    	float b = 0.0005 * (time-starttime);
+  			if (isSky > 0.5)
+	  			b /= 2.0;
+		  	if (b > 1.0)
+			  	b -= 1.0;
+  		  v = vec2(0.0, b);
+  		}
+      if(isSky > 0.5)
+      {
+        float day = mod(time, 20000.0);
+        if(day < 10000.0)
+          gl_FragColor = texture2D( texture,  fTexCoord - v );
+        else
+    		  gl_FragColor = fColor*texture2D( texture,  fTexCoord - v );
+      }
+      else
+    		gl_FragColor = fColor*texture2D( texture,  fTexCoord - v );
+
+	  	if (isGoScene > 0.5 && time - starttime > 1000.0)
+				discard;
+		}
+  	else{
+  		gl_FragColor = fColor*texture2D( texture,  fTexCoord);
+  	}
+  }
+</script>
+
+<script type="text/javascript" src="others/webgl-utils.js"></script>
+<script type="text/javascript" src="others/initShaders.js"></script>
+<script type="text/javascript" src="others/MV.js"></script>
+<script type="text/javascript" src="team2.js"></script>
+
+
+<body>
+<canvas id="gl-canvas" width="960" height="540">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+<img id = "texImage" src = "images/road.jpg" hidden></img>
+<img id = "texImage2" src = "images/grass-new.jpg" hidden></img>
+<img id = "texImage3" src = "images/sky-new.jpg" hidden></img>
+<img id = "texImage4" src = "images/ready-new.png" hidden></img>
+<img id = "texImage5" src = "images/go.png" hidden></img>
+<img id = "texImage6" src = "images/wood3.png" hidden></img>
+<img id = "texImage7" src = "images/stone.jpg" hidden></img>
+<img id = "texImage8" src = "images/0.png" hidden></img>
+<img id = "texImage9" src = "images/1.png" hidden></img>
+<img id = "texImage10" src = "images/2.png" hidden></img>
+<img id = "texImage11" src = "images/3.png" hidden></img>
+<img id = "texImage12" src = "images/4.png" hidden></img>
+<img id = "texImage13" src = "images/5.png" hidden></img>
+<img id = "texImage14" src = "images/6.png" hidden></img>
+<img id = "texImage15" src = "images/7.png" hidden></img>
+<img id = "texImage16" src = "images/8.png" hidden></img>
+<img id = "texImage17" src = "images/9.png" hidden></img>
+<img id = "texImage18" src = "images/retry.png" hidden></img>
+<img id = "texImage19" src = "images/manshadow.png" hidden></img>
+<img id = "texImage20" src = "images/coin.jpg" hidden></img>
+
+
+<audio id="audiotag1" src="sound/SuperMario3Theme.wav" preload="auto" autoplay="true"></audio>
+<audio id="audioGameOver" src="sound/sonicGameOver.mp3" preload="auto"></audio>
+<audio id="audioCoinBonus" src="sound/Mario-coin-sound.mp3" preload="auto"></audio>
+<audio id="audiopunch" src="sound/punch_sound.mp3" preload="auto"></audio>
+
+<script type="text/javascript">
+	function play_single_sound() {
+		document.getElementById('audiotag1').play();
+	}
+</script>
+</body>
+</html>
